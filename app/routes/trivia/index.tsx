@@ -60,8 +60,10 @@ export default function TriviaIndexRoute() {
     return (
       <div>
         <h2>My Games</h2>
-        <Link to="/login">You must be logged in to view your games</Link>
-        <Link to="new" className="button">
+        <div className="to-login">
+          <Link to="/login">You must be logged in to view your games</Link>
+        </div>
+        <Link to="new" className="button link-button">
           Create A Game
         </Link>
       </div>
@@ -72,6 +74,7 @@ export default function TriviaIndexRoute() {
     return (
       <div>
         <h2>My Games</h2>
+        <br />
         <p>You have no games</p>
         <Link to="new" className="button link-button">
           Create A Game
@@ -82,7 +85,8 @@ export default function TriviaIndexRoute() {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-        <h2>Your Games</h2>
+        <h2>My Games</h2>
+        <br />
         <Link to="new" className="button link-button">
           Create A Game
         </Link>

@@ -1,3 +1,5 @@
-.live-games {
-  display: none;
+@media (max-width: 768px) {
+  .live-games {
+    display: none;
+  }
 }

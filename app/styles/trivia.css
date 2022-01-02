@@ -80,3 +80,8 @@
     display: none;
   }
 }
+
+.to-login {
+  padding-bottom: 1.25rem;
+  padding-top: 1rem;
+}
