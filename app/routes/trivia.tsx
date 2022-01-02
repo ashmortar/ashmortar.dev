@@ -83,7 +83,7 @@ export default function TriviaRoute() {
               {liveGames.length > 0 ? (
                 liveGames.map(({ slug, category, startedAt }) => (
                   <li key={slug}>
-                    <Link to={`/trivia/${slug}`} className="live-game-link">
+                    <Link to={`/trivia/${slug}/play`} className="live-game-link">
                       <span>{`Category: ${category?.name ?? 'none'}`} </span>
                       <small>{`started: ${startedAt ? formatRelativeDate(startedAt) : ''}`}</small>
                     </Link>

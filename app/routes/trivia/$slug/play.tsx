@@ -1,10 +1,10 @@
-import { Form, json, redirect, useCatch, useFetcher, useLoaderData, useParams } from 'remix';
+import { Form, json, redirect, useCatch, useFetcher, useLoaderData, useParams, useSubmit } from 'remix';
 import type { ActionFunction, LoaderFunction, LinksFunction } from 'remix';
 import { getPlayer } from '~/utils/session.server';
 import { db } from '~/utils/db.server';
 import { usePolling, useQuestionState } from '~/hooks';
 import { formatDistanceToNowStrict } from 'date-fns';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { answerQuestion, handleAdvanceQuestion } from '~/utils/triviaGame.server';
 import styles from '~/styles/play.css';
 
@@ -120,9 +120,12 @@ export const loader: LoaderFunction = async ({ request, params }) => {
 
 export default function Play() {
   const { slug } = useParams();
+  const [answering, setAnswering] = useState(false);
   const { player, question, playersAnswers } = usePolling<LoaderData>(
     `/trivia/${slug}/play`,
-    useLoaderData<LoaderData>()
+    useLoaderData<LoaderData>(),
+    500,
+    answering
   );
 
   const { state, deadline } = useQuestionState(question);
@@ -138,6 +141,7 @@ export default function Play() {
           question={question}
           playerAnswers={playersAnswers}
           username={player?.username ?? null}
+          setAnswering={setAnswering}
         />
       );
     }
@@ -183,13 +187,23 @@ function Active({
   question,
   playerAnswers,
   username,
+  setAnswering,
 }: {
   deadline: Date;
   question: ClientQuestion;
   playerAnswers: ClientPlayerAnswer[];
   username: string | null;
+  setAnswering: (answering: boolean) => void;
 }) {
   const hasAnswered = !!username && !!playerAnswers.find((pA) => pA && pA.username === username);
+  const fetcher = useFetcher();
+  useEffect(() => {
+    if (fetcher.state === 'submitting') {
+      setAnswering(true);
+    } else {
+      setAnswering(false);
+    }
+  }, [fetcher, setAnswering]);
   return (
     <div>
       <h3>Game Time!</h3>

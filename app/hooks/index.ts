@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react';
 import { useFetcher } from 'remix';
 import type { ClientQuestion } from '~/routes/trivia/$slug/play';
 
-export function usePolling<T>(url: string = '', initialData: T, frequency: number = 500): T {
+export function usePolling<T>(url: string = '', initialData: T, frequency: number = 500, pause = false): T {
   const fetcher = useFetcher();
   const [data, setData] = useState<T>(initialData);
   useEffect(() => {
     const interval = setInterval(async () => {
-      if (fetcher.state === 'idle') {
+      if (fetcher.state === 'idle' && !pause) {
         await fetcher.load(url);
         if (fetcher.data) {
           setData(fetcher.data as T);
@@ -17,7 +17,7 @@ export function usePolling<T>(url: string = '', initialData: T, frequency: numbe
     return () => {
       clearTimeout(interval);
     };
-  }, [url, fetcher, frequency]);
+  }, [url, fetcher, frequency, pause]);
 
   return data;
 }
