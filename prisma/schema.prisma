@@ -1,0 +1,94 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["interactiveTransactions"]
+}
+
+datasource db {
+  provider = "postgres"
+  url      = env("DATABASE_URL")
+}
+
+model Player {
+  id           String                 @id @default(uuid())
+  username     String                 @unique
+  passwordHash String
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+  triviaGames  PlayersInTriviaGames[]
+}
+
+model TriviaGame {
+  id               String                 @id @default(uuid())
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  slug             String                 @unique
+  category         TriviaCategory?        @relation(fields: [triviaCategoryId], references: [id])
+  triviaCategoryId String?
+  currentQuestion  Int                    @default(0)
+  questions        Question[]
+  players          PlayersInTriviaGames[]
+  apiToken         String
+  startedAt        DateTime?
+  endedAt          DateTime?
+}
+
+model PlayersInTriviaGames {
+  player       Player                        @relation(fields: [playerId], references: [id])
+  playerId     String
+  triviaGame   TriviaGame                    @relation(fields: [triviaGameId], references: [id])
+  triviaGameId String
+  isHost       Boolean
+  answers      PlayersInTriviaGamesAnswers[]
+  score        Int
+  won          Boolean
+
+  @@id([playerId, triviaGameId])
+}
+
+model PlayersInTriviaGamesAnswers {
+  player       PlayersInTriviaGames @relation(fields: [playerId, triviaGameId], references: [playerId, triviaGameId])
+  playerId     String
+  triviaGameId String
+  question     Question             @relation(fields: [position, triviaGameId], references: [position, triviaGameId])
+  position     Int
+  answer       String
+
+  @@id([playerId, triviaGameId, position])
+}
+
+model TriviaCategory {
+  id              String       @id @default(uuid())
+  name            String       @unique
+  apiId           Int          @unique
+  totalQuestions  Int
+  easyQuestions   Int
+  mediumQuestions Int
+  hardQuestions   Int
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @default(now()) @updatedAt
+  available       Boolean      @default(true)
+  TriviaGame      TriviaGame[]
+  questions       Question[]
+}
+
+model Question {
+  position         Int
+  category         TriviaCategory                @relation(fields: [categoryId], references: [id])
+  categoryId       String
+  game             TriviaGame                    @relation(fields: [triviaGameId], references: [id])
+  triviaGameId     String
+  question         String
+  correctAnswer    String
+  incorrectAnswers String[]
+  type             String
+  difficulty       String
+  correctIndex     Int                           @default(0)
+  startedAt        DateTime?
+  endedAt          DateTime?
+  playerAnswers    PlayersInTriviaGamesAnswers[]
+
+  @@id([position, triviaGameId])
+}
