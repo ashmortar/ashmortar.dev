@@ -6,7 +6,9 @@
   "scripts": {
     "build": "remix build",
     "dev": "remix dev",
-    "postinstall": "remix setup node"
+    "postinstall": "remix setup node",
+    "vercel-build": "prisma generate && prisma migrate deploy && remix build",
+    "prisma:generate": "prisma generate"
   },
   "dependencies": {
     "@prisma/client": "^3.7.0",
