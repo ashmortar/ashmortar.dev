@@ -37,6 +37,9 @@ export const loader: LoaderFunction = async ({ request }): Promise<LoaderData> =
     include: {
       category: true,
     },
+    orderBy: {
+      updatedAt: 'desc',
+    },
   });
 
   games.forEach((game) => {
@@ -97,7 +100,7 @@ export default function TriviaIndexRoute() {
             Current Games <small>{currentGames.length}</small>
           </h3>
           <ul>
-            {currentGames.map(({ slug, category, startedAt, endedAt }) => (
+            {currentGames.map(({ slug, category, startedAt }) => (
               <li key={slug}>
                 <Link to={`${slug}/play`}>{`Category: ${category?.name ?? 'none'}, started: ${
                   startedAt ? formatRelativeDate(startedAt) : ''
