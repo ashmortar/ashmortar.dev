@@ -124,7 +124,7 @@ export default function Play() {
   const { player, question, playersAnswers } = usePolling<LoaderData>(
     `/trivia/${slug}/play`,
     useLoaderData<LoaderData>(),
-    500,
+    1000,
     answering
   );
 

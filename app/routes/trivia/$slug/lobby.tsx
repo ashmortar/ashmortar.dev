@@ -111,7 +111,8 @@ export default function Lobby() {
   const { slug } = useParams();
   const { hostName, category, questionCount, players, userIsHost, userIsPlayer, username } = usePolling<LoaderData>(
     `/trivia/${slug}/lobby`,
-    useLoaderData<LoaderData>()
+    useLoaderData<LoaderData>(),
+    1000
   );
   return (
     <div>
