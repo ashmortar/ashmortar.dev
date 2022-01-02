@@ -242,7 +242,7 @@ function Finished({
   useEffect(() => {
     const now = Date.now();
     const endedAt = new Date(question.endedAt ?? now).getTime();
-    if (now - endedAt > 1000 * 10 && !submitted.current) {
+    if (now - endedAt > 1000 * 5 && !submitted.current) {
       const data = new FormData();
       data.append('advance', 'true');
       fetcher.submit(data, { method: 'post' });
