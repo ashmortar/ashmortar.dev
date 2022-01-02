@@ -1,4 +1,5 @@
-import { Link, LinksFunction } from 'remix';
+import { Link } from 'remix';
+import type { LinksFunction } from 'remix';
 import landingStyles from '~/styles/landing.css';
 
 export const links: LinksFunction = () => [

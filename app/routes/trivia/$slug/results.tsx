@@ -1,8 +1,8 @@
-import { json, LinksFunction, redirect, useLoaderData } from 'remix';
-import type { LoaderFunction } from 'remix';
+import { json, redirect, useLoaderData } from 'remix';
+import type { PlayersInTriviaGames } from '@prisma/client';
+import type { LoaderFunction, LinksFunction } from 'remix';
 import { db } from '~/utils/db.server';
 import { formatDistanceToNow } from 'date-fns';
-import { PlayersInTriviaGames } from '@prisma/client';
 import styles from '~/styles/results.css';
 
 export const links: LinksFunction = () => [

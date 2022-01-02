@@ -1,5 +1,5 @@
-import { Links, LinksFunction, LiveReload, Meta, Outlet, Scripts, ScrollRestoration } from 'remix';
-import type { MetaFunction } from 'remix';
+import { Links, LiveReload, Meta, Outlet, Scripts, ScrollRestoration } from 'remix';
+import type { MetaFunction, LinksFunction } from 'remix';
 
 import globalStyles from './styles/global.css';
 import mobileStyles from './styles/mobile.css';

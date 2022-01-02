@@ -1,6 +1,5 @@
-import { prisma, TriviaCategory, TriviaGame } from '@prisma/client';
+import type { TriviaCategory } from '@prisma/client';
 import axios from 'axios';
-import { json } from 'remix';
 import { db } from './db.server';
 
 const ONE_DAY = 1000 * 60 * 60 * 24;

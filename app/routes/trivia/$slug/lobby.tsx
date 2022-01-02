@@ -1,17 +1,6 @@
 import type { PlayersInTriviaGames } from '@prisma/client';
-import {
-  Form,
-  Link,
-  useLoaderData,
-  useCatch,
-  json,
-  redirect,
-  ActionFunction,
-  useParams,
-  useFetcher,
-  LinksFunction,
-} from 'remix';
-import type { LoaderFunction } from 'remix';
+import { Form, Link, useLoaderData, useCatch, json, redirect, useParams } from 'remix';
+import type { LoaderFunction, ActionFunction, LinksFunction } from 'remix';
 import { db } from '~/utils/db.server';
 import { getPlayer, requirePlayer } from '~/utils/session.server';
 import { addSeconds } from 'date-fns';

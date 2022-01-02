@@ -1,12 +1,11 @@
-import { Form, json, LinksFunction, redirect, useCatch, useFetcher, useLoaderData, useParams } from 'remix';
-import type { ActionFunction, LoaderFunction } from 'remix';
-import { getPlayer, requirePlayer, requirePlayerOfGame } from '~/utils/session.server';
+import { Form, json, redirect, useCatch, useFetcher, useLoaderData, useParams } from 'remix';
+import type { ActionFunction, LoaderFunction, LinksFunction } from 'remix';
+import { getPlayer } from '~/utils/session.server';
 import { db } from '~/utils/db.server';
 import { usePolling, useQuestionState } from '~/hooks';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { useEffect, useRef } from 'react';
-import { handleAdvanceQuestion } from './play.utils.server';
-import { answerQuestion, requireGame, requireNotAnswered } from '~/utils/triviaGame.server';
+import { answerQuestion, handleAdvanceQuestion } from '~/utils/triviaGame.server';
 import styles from '~/styles/play.css';
 
 export const links: LinksFunction = () => [
@@ -21,21 +20,25 @@ export const action: ActionFunction = async ({ params, request }) => {
   if (!slug) {
     return redirect('/trivia');
   }
-  const user = await requirePlayer(request, request.url);
-  const game = await requireGame(slug);
-  const player = await requirePlayerOfGame(game.id, request);
 
   const form = await request.formData();
 
   const advance = form.get('advance');
 
   if (advance) {
-    await handleAdvanceQuestion(game);
+    const position = await form.get('position');
+    if (!position) {
+      throw json('position is required', 400);
+    }
+    return handleAdvanceQuestion(slug, Number(position), request);
   } else {
-    await requireNotAnswered(game, user);
-  }
+    const answer = await form.get('answer');
+    if (!answer || typeof answer !== 'string') {
+      throw json('answer is required', 400);
+    }
 
-  return await answerQuestion(game, form, user, player);
+    return await answerQuestion(slug, request, answer);
+  }
 };
 
 export type ClientQuestion = {
@@ -245,6 +248,7 @@ function Finished({
     if (now - endedAt > 1000 * 5 && !submitted.current) {
       const data = new FormData();
       data.append('advance', 'true');
+      data.append('position', question.position.toString());
       fetcher.submit(data, { method: 'post' });
       submitted.current = true;
     }

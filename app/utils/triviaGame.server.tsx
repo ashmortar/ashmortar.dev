@@ -1,7 +1,9 @@
-import { Player, PlayersInTriviaGames, PlayersInTriviaGamesAnswers, TriviaGame } from '@prisma/client';
+import type { PlayersInTriviaGamesAnswers, TriviaGame } from '@prisma/client';
+import { addSeconds } from 'date-fns';
 import { nanoid } from 'nanoid';
-import { json } from 'remix';
+import { json, redirect } from 'remix';
 import { db } from './db.server';
+import { requirePlayerId } from './session.server';
 import { generateToken, getQuestions } from './triviaApi.server';
 
 export type TriviaGameData = {
@@ -58,43 +60,34 @@ export async function requireGame(slug: string): Promise<TriviaGame> {
   return game;
 }
 
-export async function requireNotAnswered(game: TriviaGame, player: Player): Promise<void> {
-  const playerAnswer = await db.playersInTriviaGamesAnswers.findUnique({
-    where: {
-      playerId_triviaGameId_position: {
-        triviaGameId: game.id,
-        playerId: player.id,
-        position: game.currentQuestion,
-      },
-    },
-  });
-  if (playerAnswer) {
-    throw json('You have already answered this question.', 400);
-  }
-}
-
 export async function answerQuestion(
-  game: TriviaGame,
-  formData: FormData,
-  player: Player,
-  playerInGame: PlayersInTriviaGames
+  slug: string,
+  request: Request,
+  answer: string
 ): Promise<PlayersInTriviaGamesAnswers> {
-  const answer = formData.get('answer');
-  if (typeof answer !== 'string') {
-    throw json('Form is formatted incorrectly.', 400);
-  }
+  const playerId = await requirePlayerId(request, `/trivia/${slug}/play`);
 
-  const question = await db.question.findUnique({
-    where: {
-      position_triviaGameId: {
-        position: game.currentQuestion,
-        triviaGameId: game.id,
-      },
+  const game = await db.triviaGame.findUnique({
+    where: { slug },
+    include: {
+      players: { include: { player: { select: { username: true, id: true } } } },
+      questions: { include: { playerAnswers: true } },
     },
   });
+
+  if (!game) {
+    throw json('Game not found.', 404);
+  }
+
+  const question = game.questions.find(({ position }) => position === game.currentQuestion);
 
   if (!question) {
     throw json('No current question found.', 404);
+  }
+
+  const previousAnswer = question.playerAnswers.find(({ playerId: id }) => id === playerId);
+  if (previousAnswer) {
+    throw redirect(`/trivia/${slug}/play`);
   }
   const answers = [question.correctAnswer, ...question.incorrectAnswers];
   const isValidAnswer = answers.includes(answer);
@@ -106,17 +99,72 @@ export async function answerQuestion(
   const playerAnswer = await db.playersInTriviaGamesAnswers.create({
     data: {
       triviaGameId: game.id,
-      playerId: player.id,
+      playerId: playerId,
       position: question.position,
       answer,
     },
   });
   // update score
-  const isCorrect = question.correctAnswer === answer;
-  const score = isCorrect ? playerInGame.score + 1 : playerInGame.score;
-  await db.playersInTriviaGames.update({
-    where: { playerId_triviaGameId: { playerId: player.id, triviaGameId: game.id } },
-    data: { score },
-  });
+  if (question.correctAnswer === answer) {
+    const score = (game.players.find(({ playerId: id }) => id === playerId)?.score ?? 0) + 1;
+    await db.playersInTriviaGames.update({
+      where: { playerId_triviaGameId: { playerId, triviaGameId: game.id } },
+      data: { score },
+    });
+  }
   return playerAnswer;
+}
+
+export async function handleAdvanceQuestion(slug: string, position: number, request: Request) {
+  const playerId = await requirePlayerId(request);
+  const game = await db.triviaGame.findUnique({
+    where: {
+      slug,
+    },
+    include: {
+      questions: { include: { playerAnswers: true } },
+      players: { include: { player: { select: { username: true, id: true } } } },
+    },
+  });
+  if (!game) {
+    throw json('Game not found', 404);
+  }
+
+  if (!game.players.some((p) => p.player.id === playerId)) {
+    throw json('You are not in this game', 403);
+  }
+  if (position !== game.currentQuestion) {
+    throw redirect(`/trivia/${slug}/play`);
+  }
+
+  const questionCount = game.questions.length;
+  const wasLast = game.currentQuestion === questionCount - 1;
+  if (wasLast) {
+    await db.triviaGame.update({
+      where: { id: game.id },
+      data: {
+        endedAt: new Date(),
+      },
+    });
+  } else {
+    await db.triviaGame.update({
+      where: { slug: game.slug },
+      data: {
+        currentQuestion: game.currentQuestion + 1,
+      },
+    });
+    await db.question.update({
+      where: {
+        position_triviaGameId: {
+          position: game.currentQuestion + 1,
+          triviaGameId: game.id,
+        },
+      },
+      data: {
+        startedAt: addSeconds(new Date(), 5),
+        endedAt: addSeconds(new Date(), 20),
+      },
+    });
+  }
+  throw redirect(`/trivia/${game.slug}/play`);
 }

@@ -1,6 +1,6 @@
-import { TriviaCategory } from '@prisma/client';
-import { ActionFunction, json, LoaderFunction, redirect } from 'remix';
-import { Form, useLoaderData } from 'remix';
+import type { TriviaCategory } from '@prisma/client';
+import type { ActionFunction, LoaderFunction } from 'remix';
+import { Form, useLoaderData, json, redirect } from 'remix';
 import { db } from '~/utils/db.server';
 import { requirePlayerId } from '~/utils/session.server';
 import { categoryIsStale, syncCategories } from '~/utils/triviaApi.server';
