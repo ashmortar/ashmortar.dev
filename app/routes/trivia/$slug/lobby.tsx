@@ -1,10 +1,24 @@
 import type { PlayersInTriviaGames } from '@prisma/client';
-import { Form, Link, useLoaderData, useCatch, json, redirect, ActionFunction, useParams, useFetcher } from 'remix';
+import {
+  Form,
+  Link,
+  useLoaderData,
+  useCatch,
+  json,
+  redirect,
+  ActionFunction,
+  useParams,
+  useFetcher,
+  LinksFunction,
+} from 'remix';
 import type { LoaderFunction } from 'remix';
 import { db } from '~/utils/db.server';
 import { getPlayer, requirePlayer } from '~/utils/session.server';
 import { addSeconds } from 'date-fns';
 import { usePolling } from '~/hooks';
+import styles from '~/styles/lobby.css';
+
+export const links: LinksFunction = () => [{ href: styles, rel: 'stylesheet' }];
 
 export const action: ActionFunction = async ({ request, params }) => {
   const { slug } = params;
@@ -35,7 +49,7 @@ export const action: ActionFunction = async ({ request, params }) => {
           won: false,
         },
       });
-      throw redirect(`/trivia/${slug}`);
+      throw redirect(`/trivia/${slug}/lobby`);
     }
     case 'begin': {
       const isHost = game.players.some(({ playerId, isHost }) => playerId === user.id && isHost);
@@ -105,11 +119,11 @@ export const loader: LoaderFunction = async ({ request, params }): Promise<Loade
 };
 
 export default function Lobby() {
-  const { hostName, category, questionCount, players, userIsHost, userIsPlayer, username } =
-    useLoaderData<LoaderData>();
   const { slug } = useParams();
-  const fetcher = useFetcher();
-  usePolling(`/trivia/${slug}/lobby`, fetcher);
+  const { hostName, category, questionCount, players, userIsHost, userIsPlayer, username } = usePolling<LoaderData>(
+    `/trivia/${slug}/lobby`,
+    useLoaderData<LoaderData>()
+  );
   return (
     <div>
       <h2>Welcome!</h2>
@@ -121,15 +135,22 @@ export default function Lobby() {
         with a total of <span>{questionCount}</span> questions
       </p>
       <Link to=".">Share this Link to Invite Others</Link>
-      <ul>
-        {players.map(({ player, isHost }) => (
-          <li key={player.username}>
-            {isHost ? 'Host ' : 'Player '}
-            {player.username}
-            {player.username === username ? ' (You)' : ''}
-          </li>
-        ))}
-      </ul>
+      <div className="players-container">
+        <h3>Players</h3>
+        <ul>
+          {players.map(({ player, isHost }, i) => (
+            <li key={player.username}>
+              <p className="player-entry">
+                {`Player ${i + 1}: `}
+                {player.username}
+                {player.username === username ? ' (You)' : ''}
+                {isHost ? ' (Host)' : ''}
+              </p>
+            </li>
+          ))}
+        </ul>
+      </div>
+
       <Form method="post">
         {userIsHost ? (
           <>

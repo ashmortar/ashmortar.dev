@@ -116,17 +116,11 @@ export const loader: LoaderFunction = async ({ request, params }) => {
 };
 
 export default function Play() {
-  let { player, question, playersAnswers } = useLoaderData<LoaderData>();
-  const fetcher = useFetcher();
   const { slug } = useParams();
-  const userAnswer = playersAnswers.find((pA) => pA && pA.username === player?.username);
-  if (fetcher.data) {
-    player = fetcher.data.player;
-    question = fetcher.data.question;
-    playersAnswers = fetcher.data.playersAnswers;
-  }
-
-  usePolling(slug, fetcher);
+  const { player, question, playersAnswers } = usePolling<LoaderData>(
+    `/trivia/${slug}/play`,
+    useLoaderData<LoaderData>()
+  );
 
   const { state, deadline } = useQuestionState(question);
 
@@ -192,6 +186,7 @@ function Active({
   playerAnswers: ClientPlayerAnswer[];
   username: string | null;
 }) {
+  const hasAnswered = !!username && !!playerAnswers.find((pA) => pA && pA.username === username);
   return (
     <div>
       <h3>Game Time!</h3>
@@ -213,9 +208,14 @@ function Active({
                     disabled={!username || (!!username && playerAnswers.some((a) => a?.username === username))}
                     dangerouslySetInnerHTML={{
                       __html: `${answer} 
-                    ${playerAnswers
-                      .filter((pA) => pA && pA.answer === answer)
-                      .map((p) => (p?.username === username ? '✔️' : p?.username))}`,
+                    ${
+                      hasAnswered
+                        ? playerAnswers
+                            .filter((pA) => pA && pA.answer === answer)
+                            .map((p) => (p?.username === username ? 'you' : `${p?.username}`))
+                            .join(', ')
+                        : ''
+                    }`,
                     }}
                   />
                 </Form>
@@ -268,7 +268,8 @@ function Finished({
                     {answer}{' '}
                     {playerAnswers
                       .filter((pA) => pA && pA.answer === answer)
-                      .map((p) => (p?.username === username ? '✔️' : p?.username))}
+                      .map((p) => (p?.username === username ? 'you' : `${p?.username}`))
+                      .join(', ')}
                   </button>
                 </Form>
               </li>

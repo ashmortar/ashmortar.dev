@@ -1,21 +1,25 @@
-import { useRef, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useFetcher } from 'remix';
-import type { ClientPlayerAnswer, ClientQuestion } from '~/routes/trivia/$slug/play';
+import type { ClientQuestion } from '~/routes/trivia/$slug/play';
 
-export function usePolling(slug: string = '', fetcher: ReturnType<typeof useFetcher>) {
-  const pollingRef = useRef<ReturnType<typeof setInterval>>();
+export function usePolling<T>(url: string = '', initialData: T, frequency: number = 500): T {
+  const fetcher = useFetcher();
+  const [data, setData] = useState<T>(initialData);
   useEffect(() => {
-    pollingRef.current = setInterval(async () => {
+    const interval = setInterval(async () => {
       if (fetcher.state === 'idle') {
-        await fetcher.load(`/trivia/${slug}/play`);
+        await fetcher.load(url);
+        if (fetcher.data) {
+          setData(fetcher.data as T);
+        }
       }
-    }, 500);
+    }, frequency);
     return () => {
-      if (pollingRef.current) {
-        clearTimeout(pollingRef.current);
-      }
+      clearTimeout(interval);
     };
-  }, [slug]);
+  }, [url, fetcher, frequency]);
+
+  return data;
 }
 
 export type QuestionState = {
@@ -24,7 +28,7 @@ export type QuestionState = {
 };
 
 export function useQuestionState(question: ClientQuestion) {
-  function getState(question: ClientQuestion): QuestionState {
+  function getState(q: ClientQuestion): QuestionState {
     const now = Date.now();
     let startTime;
     let endTime;
@@ -32,11 +36,11 @@ export function useQuestionState(question: ClientQuestion) {
       state: 'waiting',
       deadline: 0,
     };
-    if (question.startedAt) {
-      startTime = new Date(question.startedAt).getTime();
+    if (q.startedAt) {
+      startTime = new Date(q.startedAt).getTime();
     }
-    if (question.endedAt) {
-      endTime = new Date(question.endedAt).getTime();
+    if (q.endedAt) {
+      endTime = new Date(q.endedAt).getTime();
     }
     if (startTime && endTime) {
       if (now < startTime) {
@@ -47,7 +51,6 @@ export function useQuestionState(question: ClientQuestion) {
         gs = { state: 'finished', deadline: 0 };
       }
     } else {
-      console.log();
       throw new Error('Invalid question state');
     }
     return gs;
