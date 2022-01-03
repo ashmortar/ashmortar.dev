@@ -70,10 +70,8 @@ type LoaderData = {
 };
 
 export const loader: LoaderFunction = async (): Promise<LoaderData> => {
-  let categories = await db.triviaCategory.findMany({ where: { available: true } });
-  if (categories.length === 0 || categories.some((c) => categoryIsStale(c))) {
-    categories = await syncCategories();
-  }
+  const categories = await db.triviaCategory.findMany({ where: { available: true } });
+
   return { categories };
 };
 
